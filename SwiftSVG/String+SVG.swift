@@ -163,6 +163,8 @@ private class PathCommand : PathCharacter, Commandable {
         switch self.pathType {
         case .absolute:
             return point
+        case .relative where self.path.isEmpty:
+            return CGPoint(x: point.x, y: point.y)
         case .relative:
             return CGPoint(x: point.x + self.path.currentPoint.x, y: point.y + self.path.currentPoint.y)
         }
