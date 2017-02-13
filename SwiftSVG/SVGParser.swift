@@ -34,10 +34,21 @@
 
 private var tagMapping: [String: String] = [
     "path": "SVGPath",
-    "svg": "SVGElement"
+    "svg": "SVGElement",
+    "g": "SVGGroup"
 ]
 
-@objc(SVGGroup) private class SVGGroup: NSObject { }
+@objc(SVGGroup) private class SVGGroup: NSObject {
+    var fillColor: CGColor?
+
+    var fill: String? {
+        didSet {
+            if let hexFill = fill {
+                self.fillColor = UIColor(hexString: hexFill).cgColor
+            }
+        }
+    }
+}
 
 @objc(SVGPath) open class SVGPath: NSObject {
     
@@ -62,7 +73,17 @@ private var tagMapping: [String: String] = [
     }
 }
 
-@objc(SVGElement) private class SVGElement: NSObject { }
+@objc(SVGElement) private class SVGElement: NSObject {
+    var fillColor: CGColor?
+
+    var fill: String? {
+        didSet {
+            if let hexFill = fill {
+                self.fillColor = UIColor(hexString: hexFill).cgColor
+            }
+        }
+    }
+}
 
 open class SVGParser : NSObject, XMLParserDelegate {
     
@@ -102,6 +123,15 @@ open class SVGParser : NSObject, XMLParserDelegate {
             let className = NSClassFromString(newElement) as! NSObject.Type
             let newInstance = className.init()
             
+            // Apply attributes from parent elements
+            if let parent = self.elementStack.last {
+                for thisKeyName in ["fill"] {
+                    if let attributeValue: AnyObject = parent.value(forKey: thisKeyName) as AnyObject? {
+                        newInstance.setValue(attributeValue, forKey: thisKeyName)
+                    }
+                }
+            }
+
             let allPropertyNames = newInstance.propertyNames()
             for thisKeyName in allPropertyNames {
                 if let attributeValue: AnyObject = attributeDict[thisKeyName] as AnyObject? {
